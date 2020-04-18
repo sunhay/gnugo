@@ -1,3 +1,4 @@
+# gnugo-utils
 set(UTILS_SRC
     "getopt.c"
     "getopt1.c"

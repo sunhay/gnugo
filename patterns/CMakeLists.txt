@@ -53,12 +53,10 @@ set(GG_BUILT_SOURCES "")
 macro(BUILD_JOSEKI NAME PREFIX)
     set(OUTPUT_LOC ${CMAKE_CURRENT_BINARY_DIR}/${NAME})
     set(SOURCE_LOC ${CMAKE_CURRENT_SOURCE_DIR}/${NAME})
-    add_custom_command(
-            OUTPUT ${OUTPUT_LOC}.db
-            COMMAND gnugo-joseki ${PREFIX} ${SOURCE_LOC}.sgf > ${OUTPUT_LOC}.db
-            DEPENDS gnugo-joseki ${SOURCE_LOC}.sgf
-            COMMENT "Building joseki: ${OUTPUT_LOC}.db ..."
-    )
+    add_custom_command(OUTPUT ${OUTPUT_LOC}.db
+                       COMMAND gnugo-joseki ${PREFIX} ${SOURCE_LOC}.sgf > ${OUTPUT_LOC}.db
+                       DEPENDS gnugo-joseki ${SOURCE_LOC}.sgf
+                       COMMENT "Building joseki: ${OUTPUT_LOC}.db...")
     set(JOSEKI_INPUTS ${JOSEKI_INPUTS} "-i" ${OUTPUT_LOC}.db)
     set(JOSEKI_NAMES ${JOSEKI_NAMES} ${OUTPUT_LOC}.db)
 endmacro(BUILD_JOSEKI)
@@ -72,45 +70,37 @@ BUILD_JOSEKI(mokuhazushi JM)
 BUILD_JOSEKI(takamoku JT)
 
 macro(RUN_MKPAT OPTIONS1 OPTIONS2 PATNAME DBNAME CNAME)
-    add_custom_command(
-            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
-            COMMAND gnugo-mkpat ${OPTIONS1} ${OPTIONS2} ${PATNAME}
-            -i ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
-            -o ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
-            DEPENDS gnugo-mkpat ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
-            COMMENT "Running mkpat..."
-    )
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
+                       COMMAND gnugo-mkpat ${OPTIONS1} ${OPTIONS2} ${PATNAME}
+                                           -i ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
+                                           -o ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
+                       DEPENDS gnugo-mkpat ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
+                       COMMENT "Running mkpat: ${dbname} -> ${cname}...")
     set(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/${CNAME})
 endmacro(RUN_MKPAT)
 
-SET(DFAFLAGS -D -m)
+macro(RUN_MKPAT_DFA OPTIONS PATNAME DTRNAME DBNAME CNAME)
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
+                       COMMAND gnugo-mkpat -D -m ${OPTIONS}
+                                           -t ${CMAKE_CURRENT_SOURCE_DIR}/${DTRNAME} ${PATNAME}
+                                           -i ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
+                                           -o ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
+                       DEPENDS gnugo-mkpat ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
+                                           ${CMAKE_CURRENT_SOURCE_DIR}/${DTRNAME}
+                       COMMENT "Running mkpat dfa: ${dbname} -> ${cname}...")
+    set(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/${CNAME})
+endmacro(RUN_MKPAT_DFA)
 
-MACRO(RUN_MKPAT_DFA OPTIONS PATNAME DTRNAME DBNAME CNAME)
-    ADD_CUSTOM_COMMAND(
-            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
-            COMMAND gnugo-mkpat ${DFAFLAGS} ${OPTIONS}
-            -t ${CMAKE_CURRENT_SOURCE_DIR}/${DTRNAME} ${PATNAME}
-            -i ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
-            -o ${CMAKE_CURRENT_BINARY_DIR}/${CNAME}
-            DEPENDS gnugo-mkpat ${CMAKE_CURRENT_SOURCE_DIR}/${DBNAME}
-            ${CMAKE_CURRENT_SOURCE_DIR}/${DTRNAME}
-            COMMENT "Running mkpat dfa..."
-    )
-    SET(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/${CNAME})
-ENDMACRO(RUN_MKPAT_DFA)
-
-MACRO(RUN_UNCOMPRESS_FUSEKI BOARDSIZE)
-    ADD_CUSTOM_COMMAND(
-            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/fuseki${BOARDSIZE}.c
-            COMMAND gnugo-uncompress_fuseki ${BOARDSIZE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/fuseki${BOARDSIZE}.dbz
-            c > ${CMAKE_CURRENT_BINARY_DIR}/fuseki${BOARDSIZE}.c
-            DEPENDS gnugo-uncompress_fuseki ${CMAKE_CURRENT_SOURCE_DIR}/fuseki${BOARDSIZE}.dbz
-            COMMENT "Running uncompress fuseki..."
-    )
-    SET(GG_BUILT_SOURCES ${GG_BUILT_SOURCES}
-            ${CMAKE_CURRENT_BINARY_DIR}/fuseki${BOARDSIZE}.c)
-ENDMACRO(RUN_UNCOMPRESS_FUSEKI)
+macro(RUN_UNCOMPRESS_FUSEKI BOARDSIZE)
+    set(FUSEKI_NAME fuseki${BOARDSIZE})
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${FUSEKI_NAME}.c
+                       COMMAND gnugo-uncompress_fuseki ${BOARDSIZE}
+                                                       ${CMAKE_CURRENT_SOURCE_DIR}/${FUSEKI_NAME}.dbz
+                                                        c > ${CMAKE_CURRENT_BINARY_DIR}/${FUSEKI_NAME}.c
+                       DEPENDS gnugo-uncompress_fuseki ${CMAKE_CURRENT_SOURCE_DIR}/${FUSEKI_NAME}.dbz
+                       COMMENT "Running uncompress fuseki for size:${BOARDSIZE} -> ${FUSEKI_NAME}...")
+    set(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/${FUSEKI_NAME}.c)
+endmacro(RUN_UNCOMPRESS_FUSEKI)
 
 ## FIXME: It's very ugly that the RUN_MKPAT macro takes two separate
 ## option arguments, where one is in most cases eliminated by using "".
@@ -133,57 +123,44 @@ RUN_UNCOMPRESS_FUSEKI(9)
 RUN_UNCOMPRESS_FUSEKI(13)
 RUN_UNCOMPRESS_FUSEKI(19)
 
-ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/josekidb.c
-        COMMAND gnugo-mkpat -C joseki ${JOSEKI_INPUTS}
-        -o ${CMAKE_CURRENT_BINARY_DIR}/josekidb.c
-        DEPENDS gnugo-mkpat ${JOSEKI_NAMES}
-        COMMENT "Running mkpat: josekidb.c..."
-)
-SET(GG_BUILT_SOURCES ${GG_BUILT_SOURCES}
-        ${CMAKE_CURRENT_BINARY_DIR}/josekidb.c)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/josekidb.c
+                   COMMAND gnugo-mkpat -C joseki ${JOSEKI_INPUTS} -o ${CMAKE_CURRENT_BINARY_DIR}/josekidb.c
+                   DEPENDS gnugo-mkpat ${JOSEKI_NAMES}
+                   COMMENT "Running mkpat: josekidb.c...")
+set(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/josekidb.c)
 
-ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/patterns.c
-        COMMAND gnugo-mkpat -b pat -i ${CMAKE_CURRENT_SOURCE_DIR}/patterns.db
-        -i ${CMAKE_CURRENT_SOURCE_DIR}/patterns2.db
-        -o ${CMAKE_CURRENT_BINARY_DIR}/patterns.c
-        DEPENDS gnugo-mkpat ${CMAKE_CURRENT_SOURCE_DIR}/patterns.db ${CMAKE_CURRENT_SOURCE_DIR}/patterns2.db
-        COMMENT "Running mkpat: patterns.c..."
-)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/patterns.c
+                   COMMAND gnugo-mkpat -b pat
+                                       -i ${CMAKE_CURRENT_SOURCE_DIR}/patterns.db
+                                       -i ${CMAKE_CURRENT_SOURCE_DIR}/patterns2.db
+                                       -o ${CMAKE_CURRENT_BINARY_DIR}/patterns.c
+                   DEPENDS gnugo-mkpat ${CMAKE_CURRENT_SOURCE_DIR}/patterns.db ${CMAKE_CURRENT_SOURCE_DIR}/patterns2.db
+                   COMMENT "Running mkpat: patterns.db, patterns2.db -> patterns.c...")
+set(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/patterns.c)
 
-SET(GG_BUILT_SOURCES ${GG_BUILT_SOURCES}
-        ${CMAKE_CURRENT_BINARY_DIR}/patterns.c)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/eyes.c
+                   COMMAND gnugo-mkeyes < ${CMAKE_CURRENT_SOURCE_DIR}/eyes.db
+                                        > ${CMAKE_CURRENT_BINARY_DIR}/eyes.c
+                   DEPENDS gnugo-mkeyes ${CMAKE_CURRENT_SOURCE_DIR}/eyes.db
+                   COMMENT "Running mkeyes: eyes.c...")
+set (GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/eyes.c)
 
-ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/eyes.c
-        COMMAND gnugo-mkeyes < ${CMAKE_CURRENT_SOURCE_DIR}/eyes.db
-        > ${CMAKE_CURRENT_BINARY_DIR}/eyes.c
-        DEPENDS gnugo-mkeyes ${CMAKE_CURRENT_SOURCE_DIR}/eyes.db
-        COMMENT "Running mkeyes: eyes.c..."
-)
-SET(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/eyes.c)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mcpat.c
+                   COMMAND gnugo-mkmcpat ${CMAKE_CURRENT_SOURCE_DIR}/mc_montegnu_classic.db
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/mc_mogo_classic.db
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/mc_uniform.db
+                                         > ${CMAKE_CURRENT_BINARY_DIR}/mcpat.c
+                   DEPENDS gnugo-mkmcpat ${CMAKE_CURRENT_SOURCE_DIR}/mkmcpat.c
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/mc_montegnu_classic.db
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/mc_mogo_classic.db
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/mc_uniform.db
+                   COMMENT "Running mkmcpat: mcpat.c...")
+set(GG_BUILT_SOURCES ${GG_BUILT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/mcpat.c)
 
-ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mcpat.c
-        COMMAND gnugo-mkmcpat ${CMAKE_CURRENT_SOURCE_DIR}/mc_montegnu_classic.db
-        ${CMAKE_CURRENT_SOURCE_DIR}/mc_mogo_classic.db
-        ${CMAKE_CURRENT_SOURCE_DIR}/mc_uniform.db
-        > ${CMAKE_CURRENT_BINARY_DIR}/mcpat.c
-        DEPENDS gnugo-mkmcpat ${CMAKE_CURRENT_SOURCE_DIR}/mkmcpat.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/mc_montegnu_classic.db
-        ${CMAKE_CURRENT_SOURCE_DIR}/mc_mogo_classic.db
-        ${CMAKE_CURRENT_SOURCE_DIR}/mc_uniform.db
-        COMMENT "Running mkmcpat: mcpat.c..."
-)
-
-SET(GG_BUILT_SOURCES ${GG_BUILT_SOURCES}
-        ${CMAKE_CURRENT_BINARY_DIR}/mcpat.c)
-
-message("Patterns Lib GG_BUILT_SOURCES: ${GG_BUILT_SOURCES}")
+# gnugo-patterns
 set(PATTERNS_SRC
-        "connections.c"
-        "helpers.c"
-        "transform.c"
-        ${GG_BUILT_SOURCES})
+    "connections.c"
+    "helpers.c"
+    "transform.c"
+    ${GG_BUILT_SOURCES})
 add_library(gnugo-patterns STATIC ${PATTERNS_SRC})
