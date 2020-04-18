@@ -1,22 +1,8 @@
-INCLUDE_DIRECTORIES(${GNUGo_SOURCE_DIR}/utils)
+include_directories(${GNUGO_PATH}/utils)
 
-########### sgfgen program ###############
+set(SGF_SRC
+    "sgf_utils.c"
+    "sgfnode.c"
+    "sgftree.c")
 
-SET(sgfgen_SRCS
-    sgfgen.c
-    )
-
-ADD_EXECUTABLE(sgfgen ${sgfgen_SRCS})
-
-TARGET_LINK_LIBRARIES(sgfgen)
-
-
-########### sgf library ###############
-
-SET(sgf_STAT_SRCS
-    sgf_utils.c
-    sgfnode.c
-    sgftree.c
-    )
-
-ADD_LIBRARY(sgf STATIC ${sgf_STAT_SRCS})
+add_library(gnugo-sgf STATIC ${SGF_SRC})
