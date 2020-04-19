@@ -1,5 +1,6 @@
-include_directories(${GNUGO_PATH}/patterns)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${GNUGO_PATH}/sgf)
+include_directories(${GNUGO_PATH}/patterns)
 include_directories(${GNUGO_PATH}/utils)
 
 # gnugo-engine
@@ -44,6 +45,7 @@ set(ENGINE_SRC
     "worm.c")
 
 add_library(gnugo-engine STATIC ${ENGINE_SRC})
+target_link_libraries(gnugo-engine gnugo-board gnugo-sgf)
 
 # gnugo-board
 SET(BOARD_SRC
@@ -53,3 +55,4 @@ SET(BOARD_SRC
     "printutils.c")
 
 add_library(gnugo-board STATIC ${BOARD_SRC})
+target_link_libraries(gnugo-board gnugo-sgf)

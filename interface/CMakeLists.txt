@@ -25,6 +25,6 @@ IF(UNIX)
     SET(PLATFORM_LIBRARIES m)
 ENDIF(UNIX)
 
-TARGET_LINK_LIBRARIES(gnugo gnugo-sgf gnugo-engine gnugo-sgf gnugo-utils gnugo-patterns ${PLATFORM_LIBRARIES})
+TARGET_LINK_LIBRARIES(gnugo gnugo-engine gnugo-sgf gnugo-utils gnugo-patterns ${PLATFORM_LIBRARIES})
 
 INSTALL(TARGETS gnugo DESTINATION bin)
